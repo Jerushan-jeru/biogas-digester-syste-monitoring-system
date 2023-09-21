@@ -110,6 +110,213 @@ LiquidCrystal_I2C
 Ensure you have these libraries installed to enable the code to work with the sensors and modules in the project.
 
 
+#include <SoftwareSerial.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+SoftwareSerial gprsSerial(11,10);
+
+const int SENSOR_PIN = 4;           // Arduino pin connected to Temperture DS18B20 sensor's DQ pin
+const int FLOW_SENSOR_PIN = 2;      // Arduino pin connected to the flow sensor
+const int GAS_SENSOR_PIN = 3;       // Pin connected to the gas sensor
+
+OneWire oneWire(SENSOR_PIN);         // setup a oneWire instance
+DallasTemperature tempSensor(&oneWire); // pass oneWire to DallasTemperature library
+
+float tempCelsius;    // temperature in Celsius
+float tempFahrenheit; // temperature in Fahrenheit
+
+int flowPulse = 0;               // Flow sensor pulse counter
+float flowRate = 0.0;            // Flow rate in L/min
+float totalVolume = 0.0;         // Total volume in liters
+unsigned long prevMillis = 0;    // Previous time for flow rate calculation
+unsigned long interval = 1000;   // Interval for flow rate calculation (1 second)
+
+
+// LCD configuration
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+void setup() {
+  gprsSerial.begin(9600);
+  Serial.begin(9600);
+  tempSensor.begin(); // initialize the sensor
+  lcd.init();         // initialize the LCD
+  lcd.backlight();    // turn on the backlight
+  pinMode(FLOW_SENSOR_PIN, INPUT); // Initialize the flow sensor pin as INPUT
+  lcd.clear();        // clear the LCD screen
+  delay(1000);
+}
+
+void loop() {
+
+  lcd.clear(); // Clear the LCD screen
+  lcd.setCursor(0, 0); // Set cursor to the first row, first column
+  lcd.print(" DATA SEND ");
+  delay (3000);
+
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print (" BIO GAS ");
+  delay (1000);
+  lcd.setCursor (0,1);
+  lcd.print ("SPM PROJECT");
+  delay (5000);
+
+   // Read flow sensor data
+  if (millis() - prevMillis > interval) {
+    float sensorVoltage = analogRead(FLOW_SENSOR_PIN) * 5.0 / 1024.0;
+    flowRate = sensorVoltage * 40.0; // Flow rate in L/min (adjust the constant based on your sensor)
+    totalVolume += flowRate / 60.0;  // Total volume in liters
+
+    prevMillis = millis(); // Update the previous time
+  }
+
+  // Print temperature data on the LCD (unchanged)
+
+  // Print temperature data to Serial monitor (unchanged)
+
+  // Print Flow Rate data to Serial monitor and LCD
+  lcd.clear ();
+  lcd.setCursor(0, 0); // Set cursor to the third row, first column
+  lcd.print("Flow Rate: ");
+  lcd.print(flowRate, 2); // Display flow rate with two decimal places
+  lcd.print(" L/min");
+  delay (5000);
+
+
+  Serial.print("Flow Rate (L/min): ");
+  Serial.println(flowRate, 2); // Print flow rate with two decimal places
+
+
+  lcd.clear ();                        // Print Total Volume data to Serial monitor and LCD
+  lcd.setCursor(0,0); // Set cursor to the fourth row, first column
+  lcd.print("Total Volume: ");
+  lcd.print(totalVolume, 2); // Display total volume with two decimal places
+  lcd.print(" L");
+  delay (5000);
+
+  Serial.print("Total Volume (L): ");
+  Serial.println(totalVolume, 2); // Print total volume with two decimal places
+
+  
+  // Read gas sensor data
+  float sensorValue = analogRead(GAS_SENSOR_PIN);
+  Serial.print("Gas Sensor Value: ");
+  Serial.println(sensorValue);
+
+  lcd.clear ();                        // Print Total Volume data to Serial monitor and LCD
+  lcd.setCursor(0,0);               // Set cursor to the fourth row, first column
+  lcd.print("Gas Value: ");
+  lcd.print(sensorValue);
+  delay (5000);
+
+                                                // Read temperature sensor data
+  tempSensor.requestTemperatures();             // send the command to get temperatures
+  tempCelsius = tempSensor.getTempCByIndex(0);  // read temperature in Celsius
+  tempFahrenheit = tempCelsius * 9 / 5 + 32; // convert Celsius to Fahrenheit
+
+  // Print temperature data on the LCD
+  lcd.clear(); // Clear the LCD screen
+  lcd.setCursor(0, 0); // Set cursor to the first row, first column
+  lcd.print("Temp: ");
+  lcd.print(tempCelsius);
+  lcd.print("C");
+  lcd.setCursor(0,1); // Set cursor to the second row, first column
+  lcd.print("Fahrenheit: ");
+  lcd.print(tempFahrenheit);
+  lcd.print("F");
+  delay (5000);
+
+  // Print temperature data to Serial monitor
+  Serial.print("Temperature: ");
+  Serial.print(tempCelsius);    // print the temperature in Celsius
+  Serial.print("°C");
+  Serial.print("  ~  ");        // separator between Celsius and Fahrenheit
+  Serial.print(tempFahrenheit); // print the temperature in Fahrenheit
+  Serial.println("°F");
+
+// GPRS-related code (unchanged)
+  if (gprsSerial.available())
+    Serial.write(gprsSerial.read());
+
+  gprsSerial.println("AT");
+  delay(1000);
+
+  gprsSerial.println("AT+CPIN?");
+  delay(1000);
+
+  gprsSerial.println("AT+CREG?");
+  delay(1000);
+
+  gprsSerial.println("AT+CGATT?");
+  delay(1000);
+
+  gprsSerial.println("AT+CIPSHUT");
+  delay(1000);
+
+  gprsSerial.println("AT+CIPSTATUS");
+  delay(2000);
+
+  gprsSerial.println("AT+CIPMUX=0");
+  delay(2000);
+
+  ShowSerialData();
+
+  gprsSerial.println("AT+CSTT=\"dialogbb\"");
+  delay(1000);
+
+  ShowSerialData();
+
+  gprsSerial.println("AT+CIICR");
+  delay(3000);
+
+  ShowSerialData();
+
+  gprsSerial.println("AT+CIFSR");
+  delay(2000);
+
+  ShowSerialData();
+
+  gprsSerial.println("AT+CIPSPRT=0");
+  delay(3000);
+
+  ShowSerialData();
+
+  gprsSerial.println("AT+CIPSTART=\"TCP\",\"api.thingspeak.com\",\"80\"");
+  delay(6000);
+
+  ShowSerialData();
+
+  gprsSerial.println("AT+CIPSEND");
+  delay(4000);
+  ShowSerialData();
+
+  String str = "GET /update?api_key=BK3ZSCZNKT71QDV5&field1=" + String(tempCelsius) + "&field2=" + String(tempFahrenheit) + "&field3=" + String(totalVolume)+ "&field4=" + String(sensorValue);
+  Serial.println(str);
+  gprsSerial.println(str);
+
+  delay(4000);
+  ShowSerialData();
+
+  gprsSerial.println((char)26);
+  delay(5000);
+  gprsSerial.println();
+
+  ShowSerialData();
+
+  gprsSerial.println("AT+CIPSHUT");
+  delay(100);
+  ShowSerialData();
+}
+
+void ShowSerialData() {
+  while (gprsSerial.available() != 0)
+    Serial.write(gprsSerial.read());
+  delay(5000);
+}
+ 
 
 
 
