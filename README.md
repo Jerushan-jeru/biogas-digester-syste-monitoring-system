@@ -2,7 +2,8 @@
 biogas digester system monitoring system
 
 
-![bio drawing (1)](https://github.com/Jerushan-jeru/biogas-digester-syste-monitoring-system/assets/75292658/dcee147c-fcad-4010-b31f-c1ecc83c7a99)
+![bio drawing (1)](https://github.com/Jerushan-jeru/biogas-digester-syste-monitoring-system/assets/75292658/cc3e049b-e6ac-4a79-aa41-f28e732ab6e3)
+
 
 **Project Purpose:**
 
