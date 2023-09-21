@@ -1,13 +1,12 @@
 # biogas-digester-syste-monitoring-system
-biogas digester system monitoring system
-
-
-![bio drawing (1)](https://github.com/Jerushan-jeru/biogas-digester-syste-monitoring-system/assets/75292658/cc3e049b-e6ac-4a79-aa41-f28e732ab6e3)
-
 
 **Project Purpose:**
 
 The project's primary purpose is to monitor and transmit Bio Gas, particularly temperature, gas levels, and fluid flow rate, to an IoT platform for remote monitoring and analysis. This could be applied in various scenarios, including industrial automation, environmental monitoring, or remote sensor data collection.
+
+![bio drawing (1)](https://github.com/Jerushan-jeru/biogas-digester-syste-monitoring-system/assets/75292658/cc3e049b-e6ac-4a79-aa41-f28e732ab6e3)
+
+
 
 **Hardware and Software Requirements::**
 
